@@ -1,0 +1,381 @@
+<main>
+  <h1>Codex OAuth Dashboard</h1>
+
+  @if (loading) {
+    <section>Loading auth entries…</section>
+  } @else if (error && !loading) {
+    <section class="error">
+      {{ error }}
+    </section>
+  } @else {
+    <section>
+      @if (authEntries.length > 0) {
+        <div class="global-summary">
+          <div class="global-summary__item">
+            <div class="global-summary__label">
+              Overall weekly usage
+            </div>
+              <div class="limit-bar limit-bar--global">
+                <div
+                  class="limit-bar__fill"
+                  [style.width.%]="globalUsageAverage()"
+                ></div>
+                <span class="limit-bar__label">
+                  {{ globalUsageAverage() }}% ({{ globalUsageSum() }}/{{ globalWeeklyAccountCount() * 100 }})
+                </span>
+            </div>
+          </div>
+          <div class="global-summary__item">
+            <div class="global-summary__label">
+              Overall weekly elapsed time
+            </div>
+            <div class="limit-bar limit-bar--global">
+              <div
+                class="limit-bar__fill limit-bar__fill--time"
+                [style.width.%]="globalWeeklyElapsedTimeAverage()"
+              ></div>
+              <span class="limit-bar__label">
+                {{ globalWeeklyElapsedTimeAverage() }}% ({{ globalWeeklyElapsedTimeSum() }}/{{ globalWeeklyAccountCount() * 100 }})
+              </span>
+            </div>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Account</th>
+              <th>Access token</th>
+              <th>5h limit</th>
+              <th>Weekly limit</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of sortedEntries; track entry.id) {
+              <tr
+                [class.account-row--inactive]="!hasValidWeekly(entry.id)"
+                [class.account-row--active]="activeProfileId === entry.id"
+              >
+                <td>
+                  <button
+                    type="button"
+                    class="icon-button icon-button--circle"
+                    (click)="toggleDetails(entry)"
+                  >
+                    <span class="material-symbols-outlined">
+                      {{ expanded[entry.id] ? 'expand_more' : 'chevron_right' }}
+                    </span>
+                  </button>
+                </td>
+                <td>
+                  <div class="account-main">
+                    <span class="ribbon ribbon--green">
+                      {{
+                        (limits[entry.id]?.planType || entry.planType) || '—'
+                      }}
+                    </span>
+                    <span class="account-id">
+                      {{ entry.id }}
+                      @if (entry.hasApiKey) {
+                        <button
+                          type="button"
+                          class="icon-button icon-button--key"
+                          title="An OpenAI API key is configured for this profile"
+                          (click)="copyApiKey(entry)"
+                        >
+                          <span class="material-symbols-outlined">key</span>
+                        </button>
+                      }
+                    </span>
+                  </div>
+                  <div class="account-email">
+                    {{ entry.email || '—' }}
+                  </div>
+                </td>
+                <td>
+                  <div class="access-token">
+                    <div class="access-token-row">
+                      <span class="access-token-label">Issued</span>
+                      <span class="ribbon ribbon--green">
+                        {{ formatRelativeDaysFromNowSeconds(entry.accessToken?.iat) }}
+                      </span>
+                      <span class="access-token-date">
+                        {{ formatUnixSeconds(entry.accessToken?.iat) }}
+                      </span>
+                    </div>
+                    <div class="access-token-row">
+                      <span class="access-token-label">Expires</span>
+                      <span
+                        class="ribbon"
+                        [ngClass]="expiryRibbonClassFromSeconds(entry.accessToken?.exp)"
+                      >
+                        {{ formatRelativeDaysFromNowSeconds(entry.accessToken?.exp) }}
+                      </span>
+                      <span class="access-token-date">
+                        {{ formatUnixSeconds(entry.accessToken?.exp) }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  @if (limits[entry.id]?.primary; as primary) {
+                    @if (primary.resetsAt) {
+                      <div class="limit-reset">
+                        Resets {{ formatResetTime(primary.resetsAt) }}
+                      </div>
+                    }
+                    <div class="limit-bar">
+                      <div
+                        class="limit-bar__fill"
+                        [ngClass]="weeklyLimitFillClass(primary.usedPercent)"
+                        [style.width.%]="primary.usedPercent"
+                      ></div>
+                      <span class="limit-bar__label">
+                        {{ primary.usedPercent }}%
+                      </span>
+                    </div>
+                    <div class="limit-bar limit-bar--time">
+                      <div
+                        class="limit-bar__fill limit-bar__fill--time"
+                        [style.width.%]="timeProgressPercent(primary)"
+                      ></div>
+                    </div>
+                  } @else {
+                    —
+                  }
+                </td>
+                <td>
+                  @if (limits[entry.id]; as lim) {
+                    @if (lim.secondary) {
+                      @if (lim.secondary.resetsAt) {
+                        <div class="limit-reset">
+                          Resets {{ formatResetDateTime(lim.secondary.resetsAt) }}
+                        </div>
+                      }
+                      <div class="limit-bar">
+                        <div
+                          class="limit-bar__fill"
+                          [ngClass]="weeklyLimitFillClass(lim.secondary.usedPercent)"
+                          [style.width.%]="lim.secondary.usedPercent"
+                        ></div>
+                        <span class="limit-bar__label">
+                          {{ lim.secondary.usedPercent }}%
+                        </span>
+                      </div>
+                      <div class="limit-bar limit-bar--time">
+                        <div
+                          class="limit-bar__fill limit-bar__fill--time"
+                          [style.width.%]="timeProgressPercent(lim.secondary)"
+                        ></div>
+                      </div>
+                    } @else {
+                      —
+                    }
+                  } @else {
+                    —
+                  }
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="icon-button"
+                    [disabled]="activeProfileId === entry.id"
+                    (click)="activateProfile(entry)"
+                  >
+                    <span class="material-symbols-outlined">
+                      {{ activeProfileId === entry.id ? 'check_circle' : 'person' }}
+                    </span>
+                    <span class="icon-button__label">
+                      {{ activeProfileId === entry.id ? 'Active' : 'Activate' }}
+                    </span>
+                  </button>
+                </td>
+              </tr>
+              <tr
+                class="details-row"
+                [class.details-row--collapsed]="!expanded[entry.id]"
+              >
+                <td colspan="6">
+                  <div class="details">
+                      @if (entry.idToken; as idt) {
+                        <div class="details-column">
+                          <h3>ID token</h3>
+                        <dl>
+                          <dt>Issuer</dt>
+                          <dd>{{ idt.iss || '—' }}</dd>
+                          <dt>Audience</dt>
+                          <dd>{{ idt.aud?.join(', ') || '—' }}</dd>
+                          <dt>Subject</dt>
+                          <dd>{{ idt.sub || '—' }}</dd>
+                          <dt>Provider</dt>
+                          <dd>{{ idt.auth_provider || '—' }}</dd>
+                          <dt>Auth time</dt>
+                          <dd>{{ formatUnixSeconds(idt.auth_time) }}</dd>
+                          <dt>Issued at</dt>
+                          <dd>{{ formatUnixSeconds(idt.iat) }}</dd>
+                          <dt>Expires at</dt>
+                          <dd>{{ formatUnixSeconds(idt.exp) }}</dd>
+                          <dt>Refresh-at</dt>
+                          <dd>{{ formatUnixSeconds(idt.rat) }}</dd>
+                          <dt>JWT ID</dt>
+                          <dd>{{ idt.jti || '—' }}</dd>
+                          <dt>Session ID</dt>
+                          <dd>{{ idt.sid || '—' }}</dd>
+                          <dt>At hash</dt>
+                          <dd>{{ idt.at_hash || '—' }}</dd>
+                          <dt>Email verified</dt>
+                          <dd>{{ idt.email_verified === true ? 'yes' : 'no' }}</dd>
+                          <dt>ChatGPT user</dt>
+                          <dd>
+                            {{
+                              idt['https://api.openai.com/auth']?.chatgpt_user_id || '—'
+                            }}
+                          </dd>
+                          <dt>ChatGPT account</dt>
+                          <dd>
+                            {{
+                              idt['https://api.openai.com/auth']?.chatgpt_account_id || '—'
+                            }}
+                          </dd>
+                          <dt>Plan</dt>
+                          <dd>
+                            {{
+                              idt['https://api.openai.com/auth']
+                                ?.chatgpt_plan_type || '—'
+                            }}
+                          </dd>
+                          <dt>Subscription start</dt>
+                          <dd>
+                            {{
+                              formatIso(
+                                idt['https://api.openai.com/auth']
+                                  ?.chatgpt_subscription_active_start || null
+                              )
+                            }}
+                          </dd>
+                          <dt>Subscription until</dt>
+                          <dd>
+                            {{
+                              formatIso(
+                                idt['https://api.openai.com/auth']
+                                  ?.chatgpt_subscription_active_until || null
+                              )
+                            }}
+                          </dd>
+                          <dt>Subscription last checked</dt>
+                          <dd>
+                            {{
+                              formatIso(
+                                idt['https://api.openai.com/auth']
+                                  ?.chatgpt_subscription_last_checked || null
+                              )
+                            }}
+                          </dd>
+                          <dt>Org</dt>
+                          <dd>
+                            {{
+                              idt['https://api.openai.com/auth']
+                                ?.organizations?.[0]?.title || '—'
+                            }}
+                          </dd>
+                        </dl>
+                        </div>
+                      }
+                      @if (entry.accessToken; as at) {
+                        <div class="details-column">
+                          <h3>Access token</h3>
+                        <dl>
+                          <dt>Issuer</dt>
+                          <dd>{{ at.iss || '—' }}</dd>
+                          <dt>Audience</dt>
+                          <dd>{{ at.aud?.join(', ') || '—' }}</dd>
+                          <dt>Session</dt>
+                          <dd>{{ at.session_id || '—' }}</dd>
+                          <dt>Client</dt>
+                          <dd>{{ at.client_id || '—' }}</dd>
+                          <dt>Issued at</dt>
+                          <dd>{{ formatUnixSeconds(at.iat) }}</dd>
+                          <dt>Not before</dt>
+                          <dd>{{ formatUnixSeconds(at.nbf) }}</dd>
+                          <dt>Expires at</dt>
+                          <dd>{{ formatUnixSeconds(at.exp) }}</dd>
+                          <dt>JWT ID</dt>
+                          <dd>{{ at.jti || '—' }}</dd>
+                          <dt>Password auth time</dt>
+                          <dd>{{ formatUnixMillis(at.pwd_auth_time) }}</dd>
+                          <dt>Scopes</dt>
+                          <dd>
+                            {{
+                              at.scp && at.scp.length > 0
+                                ? at.scp.join(', ')
+                                : '—'
+                            }}
+                          </dd>
+                          <dt>ChatGPT account</dt>
+                          <dd>
+                            {{
+                              at['https://api.openai.com/auth']?.chatgpt_account_id || '—'
+                            }}
+                          </dd>
+                          <dt>Account user</dt>
+                          <dd>
+                            {{
+                              at['https://api.openai.com/auth']
+                                ?.chatgpt_account_user_id || '—'
+                            }}
+                          </dd>
+                          <dt>Compute residency</dt>
+                          <dd>
+                            {{
+                              at['https://api.openai.com/auth']
+                                ?.chatgpt_compute_residency || '—'
+                            }}
+                          </dd>
+                          <dt>Plan</dt>
+                          <dd>
+                            {{
+                              at['https://api.openai.com/auth']?.chatgpt_plan_type || '—'
+                            }}
+                          </dd>
+                          <dt>ChatGPT user</dt>
+                          <dd>
+                            {{
+                              at['https://api.openai.com/auth']?.chatgpt_user_id || '—'
+                            }}
+                          </dd>
+                          <dt>User ID</dt>
+                          <dd>
+                            {{
+                              at['https://api.openai.com/auth']?.user_id || '—'
+                            }}
+                          </dd>
+                          <dt>Profile email</dt>
+                          <dd>
+                            {{
+                              at['https://api.openai.com/profile']?.email || '—'
+                            }}
+                          </dd>
+                          <dt>Profile email verified</dt>
+                          <dd>
+                            {{
+                              at['https://api.openai.com/profile']?.email_verified === true
+                                ? 'yes'
+                                : 'no'
+                            }}
+                          </dd>
+                        </dl>
+                        </div>
+                      }
+                    </div>
+                  </td>
+                </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p>No auth files found.</p>
+      }
+    </section>
+  }
+</main>

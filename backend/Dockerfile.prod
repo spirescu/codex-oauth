@@ -1,0 +1,25 @@
+FROM node:24.11.0-alpine AS build
+
+WORKDIR /app
+
+COPY backend/package.json ./
+COPY backend/tsconfig*.json ./
+COPY backend/src ./src
+
+RUN npm install --no-audit --no-fund --no-package-lock --no-update-notifier
+RUN npm run build
+
+FROM node:24.11.0-alpine AS runtime
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+
+COPY backend/package.json ./
+RUN npm install --omit=dev --no-audit --no-fund --no-package-lock --no-update-notifier
+
+COPY --from=build /app/dist ./dist
+
+CMD ["node", "dist/main.js"]

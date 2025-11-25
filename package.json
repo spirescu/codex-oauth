@@ -1,0 +1,23 @@
+{
+  "name": "codex-oauth-root",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start:dev": "docker compose -f docker-compose.dev.yml up -d",
+    "start:prod": "docker compose -f docker-compose.prod.yml up -d",
+    "stop:dev": "docker compose -f docker-compose.dev.yml down",
+    "stop:prod": "docker compose -f docker-compose.prod.yml down",
+    "start:cli": "npm run build --prefix cli && npm run start --prefix cli",
+    "docker:check": "docker compose -f docker-compose.dev.yml logs --tail=100 backend frontend",
+    "lint:fix": "npm --prefix backend run lint:fix && npm --prefix frontend run lint:fix && npm --prefix cli run lint:fix",
+    "type:check": "npm --prefix backend run type:check && npm --prefix frontend run type:check && npm --prefix cli run type:check",
+    "build:check": "npm --prefix backend run build && npm --prefix frontend run build && npm --prefix cli run build",
+    "check": "npm run lint:fix && npm run type:check && npm run build:check && npm run docker:check"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-unused-imports": "^4.3.0"
+  }
+}

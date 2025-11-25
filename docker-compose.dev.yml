@@ -1,0 +1,58 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    working_dir: /app/backend
+    volumes:
+      - .:/app
+      - ~/.codex:/app/.codex
+      - /app/backend/node_modules
+    command: >
+      sh -c "npm install --no-audit --no-fund --no-package-lock --no-update-notifier
+      && npx tsx watch src/main.ts"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=3000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
+    working_dir: /app/frontend
+    volumes:
+      - .:/app
+      - /app/frontend/node_modules
+      - /app/frontend/.angular
+      - /app/.angular
+    command: >
+      sh -c "npm install --no-audit --no-fund --no-package-lock --no-update-notifier
+      && npx ng serve frontend --host 0.0.0.0 --port 80"
+    environment:
+      NODE_ENV: development
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`) && !PathPrefix(`/api`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    depends_on:
+      - backend
+
+  traefik:
+    image: traefik:3.2.0
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Traefik reverse proxy: routes /api to backend and everything else to frontend

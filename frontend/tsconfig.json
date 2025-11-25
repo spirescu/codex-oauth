@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "types": [],
+    "outDir": "../../dist-frontend-ts",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["app/*"]
+    }
+  },
+  "files": ["main.ts"],
+  "include": ["app/**/*.ts"]
+}

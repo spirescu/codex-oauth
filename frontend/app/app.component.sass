@@ -1,0 +1,273 @@
+main
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
+  padding: 1.5rem
+
+table
+  border-collapse: separate
+  border-spacing: 0
+  width: 100%
+  margin-top: 1rem
+  background-color: #fff
+  border-radius: 0.75rem
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08)
+  overflow: hidden
+
+th,
+td
+  border-bottom: 1px solid #e5e7eb
+  padding: 0.6rem 0.8rem
+  text-align: left
+
+th
+  background-color: #f9fafb
+  font-size: 0.75rem
+  text-transform: uppercase
+  letter-spacing: 0.08em
+  color: #6b7280
+
+tbody tr:nth-child(even)
+  background-color: #f9fafb
+
+tbody tr:hover
+  background-color: #eef2ff
+
+.error
+  color: #b00020
+
+.details
+  display: grid
+  grid-template-columns: repeat(2, minmax(0, 1fr))
+  gap: 1.5rem
+  align-items: flex-start
+  padding: 1rem 1.25rem
+  background-color: #fff
+  border-radius: 0.75rem
+  border: 1px solid #e0e0e0
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04)
+
+.details-column
+  flex: 1
+  min-width: 0
+  font-size: 0.9rem
+
+  h3
+    margin: 0 0 0.5rem
+    font-size: 0.95rem
+    font-weight: 600
+
+  dl
+    margin: 0
+
+  dt
+    margin-top: 0.4rem
+    font-size: 0.8rem
+    text-transform: uppercase
+    letter-spacing: 0.04em
+    color: #666
+
+  dd
+    margin: 0.1rem 0 0
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace
+    color: #222
+
+.global-summary
+  display: flex
+  flex-direction: column
+  gap: 0.5rem
+  margin-bottom: 0.75rem
+
+  &__item
+    display: flex
+    flex-direction: column
+    gap: 0.15rem
+
+  &__label
+    font-size: 0.8rem
+    color: #333
+
+  &__empty
+    font-size: 0.8rem
+    color: #9ca3af
+
+.account-main
+  display: flex
+  align-items: center
+  gap: 0.5rem
+
+.account-email
+  margin-top: 0.25rem
+  font-size: 0.9rem
+
+.account-id
+  display: inline-flex
+  align-items: center
+  gap: 0.25rem
+
+.limit-reset
+  font-size: 0.75rem
+  margin-bottom: 0.25rem
+  text-align: center
+
+.details-row
+  transition: background-color 0.15s ease-out
+
+  td
+    background-color: #fafafa
+    border-top: none
+
+  &--collapsed
+    display: none
+
+.limit-bar
+  position: relative
+  width: 100%
+  height: 1rem
+  background-color: #eee
+  border-radius: 9999px
+  overflow: hidden
+  margin-top: 0.1rem
+
+  &--time
+    margin-top: 0.25rem
+
+  &__fill
+    height: 100%
+    background-color: #4caf50
+    transition: width 0.2s ease-out
+
+    &--yellow
+      background-color: #ffb300
+
+    &--red
+      background-color: #e53935
+
+    &--time
+      background-color: #1976d2
+
+  &__label
+    position: absolute
+    top: 50%
+    left: 50%
+    transform: translate(-50%, -50%)
+    font-size: 0.8rem
+    color: #000
+
+.access-token
+  display: flex
+  flex-direction: column
+  align-items: stretch
+  text-align: right
+  gap: 0.25rem
+
+.access-token-row
+  display: flex
+  align-items: center
+  gap: 0.5rem
+  justify-content: space-between
+
+.access-token-label
+  font-size: 0.75rem
+  text-align: left
+
+.access-token-date
+  font-variant-numeric: tabular-nums
+
+.ribbon
+  display: inline-flex
+  align-items: center
+  padding: 0.1rem 0.4rem
+  border-radius: 9999px
+  font-size: 0.75rem
+  color: #fff
+  background-color: #4caf50
+
+  &--green
+    background-color: #4caf50
+
+  &--yellow
+    background-color: #ffb300
+
+  &--red
+    background-color: #e53935
+
+.account-row--inactive
+  background-color: #f5f5f5
+  color: #777
+
+  .ribbon
+    background-color: #bdbdbd
+
+    &--green,
+    &--yellow,
+    &--red
+      background-color: #bdbdbd
+
+  .limit-bar__fill
+    background-color: #bdbdbd
+
+    &--yellow,
+    &--red,
+    &--time
+      background-color: #bdbdbd
+
+.account-row--active
+  box-shadow: inset 3px 0 0 #22c55e
+
+.icon-button
+  display: inline-flex
+  align-items: center
+  justify-content: center
+  gap: 0.25rem
+  padding: 0.2rem 0.6rem
+  border-radius: 9999px
+  border: 1px solid #ccc
+  background-color: #f7f7f7
+  font-size: 0.85rem
+  cursor: pointer
+
+  &:hover
+    background-color: #eaeaea
+
+  &--primary
+    border-color: #1976d2
+    background-color: #1976d2
+    color: #fff
+
+    &:hover
+      background-color: #145ca8
+
+  &--circle
+    width: 2rem
+    height: 2rem
+    padding: 0
+    border-radius: 9999px
+
+  &--key
+    width: 1.6rem
+    height: 1.6rem
+    padding: 0
+    border-radius: 9999px
+    border-color: transparent
+    background-color: transparent
+
+    &:hover
+      background-color: #e5e7eb
+
+.icon-button__label
+  font-size: 0.8rem
+
+.material-symbols-outlined
+  font-family: 'Material Symbols Outlined'
+  font-weight: normal
+  font-style: normal
+  font-size: 1.25rem
+  line-height: 1
+  letter-spacing: normal
+  text-transform: none
+  display: inline-block
+  white-space: nowrap
+  word-wrap: normal
+  direction: ltr
+  -webkit-font-feature-settings: 'liga'
+  -webkit-font-smoothing: antialiased
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24

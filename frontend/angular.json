@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/@angular/build/ng-schema.json",
+  "version": 1,
+  "projects": {
+    "frontend": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:browser",
+          "options": {
+            "outputPath": "dist-frontend",
+            "index": "index.html",
+            "main": "main.ts",
+            "tsConfig": "tsconfig.json",
+            "assets": [],
+            "styles": [
+              "node_modules/@fontsource/material-symbols-outlined/index.css",
+              "app/app.component.sass"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "sourceMap": false
+            }
+          }
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "buildTarget": "frontend:build"
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "frontend:build:production"
+            }
+          }
+        }
+      }
+    }
+  }
+}

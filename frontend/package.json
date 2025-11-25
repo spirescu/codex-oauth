@@ -1,0 +1,27 @@
+{
+  "name": "codex-oauth-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "ng serve frontend --host 0.0.0.0 --port 80 --workspace angular.json",
+    "build": "ng build frontend --configuration production --workspace angular.json",
+    "lint:fix": "eslint ./app --ext .ts --fix"
+  },
+  "dependencies": {
+    "@angular/common": "^21.0.0",
+    "@angular/core": "^21.0.0",
+    "@angular/platform-browser": "^21.0.0",
+    "@angular/platform-browser-dynamic": "^21.0.0",
+    "@angular/cdk": "^21.0.0",
+    "@fontsource/material-symbols-outlined": "5.2.27",
+    "rxjs": "^7.8.2",
+    "zone.js": "^0.15.1"
+  },
+  "devDependencies": {
+    "@angular/build": "21.0.0",
+    "@angular-devkit/build-angular": "21.0.0",
+    "@angular/cli": "^21.0.0",
+    "@angular/compiler-cli": "^21.0.0",
+    "typescript": "^5.9.3"
+  }
+}

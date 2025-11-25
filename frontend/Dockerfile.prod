@@ -1,0 +1,19 @@
+FROM node:24.11.0-alpine AS build
+
+WORKDIR /app/frontend
+
+COPY frontend/package.json ./package.json
+COPY frontend/angular.json ./angular.json
+COPY frontend/tsconfig.json ./tsconfig.json
+COPY frontend/app ./app
+COPY frontend/index.html ./index.html
+
+RUN npm install --no-audit --no-fund --no-package-lock --no-update-notifier
+RUN npx ng build frontend --configuration production
+
+FROM nginx:1.27.2-alpine
+
+WORKDIR /usr/share/nginx/html
+
+COPY frontend/nginx.conf /etc/nginx/nginx.conf
+COPY --from=build /app/frontend/dist-frontend ./

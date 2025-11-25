@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.prod
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NPM_CONFIG_UPDATE_NOTIFIER: "false"
+    volumes:
+      - ~/.codex:/app/.codex
+      - ./auth-refresh-payloads:/app/auth-refresh-payloads
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=3000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.prod
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`) && !PathPrefix(`/api`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+  traefik:
+    image: traefik:3.2.0
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Traefik reverse proxy: routes /api to backend and everything else to frontend
