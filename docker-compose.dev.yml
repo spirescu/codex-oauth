@@ -6,8 +6,7 @@ services:
     working_dir: /app/backend
     volumes:
       - .:/app
-      - ~/.codex:/app/.codex
-      - /app/backend/node_modules
+      - backend_node_modules:/app/backend/node_modules
     command: >
       sh -c "npm install --no-audit --no-fund --no-package-lock --no-update-notifier
       && npx tsx watch src/main.ts"
@@ -28,9 +27,8 @@ services:
     working_dir: /app/frontend
     volumes:
       - .:/app
-      - /app/frontend/node_modules
-      - /app/frontend/.angular
-      - /app/.angular
+      - frontend_node_modules:/app/frontend/node_modules
+      - frontend_angular_cache:/app/frontend/.angular
     command: >
       sh -c "npm install --no-audit --no-fund --no-package-lock --no-update-notifier
       && npx ng serve frontend --host 0.0.0.0 --port 80"
@@ -47,6 +45,7 @@ services:
 
   traefik:
     image: traefik:3.2.0
+    userns_mode: host
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -56,3 +55,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     # Traefik reverse proxy: routes /api to backend and everything else to frontend
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:
+  frontend_angular_cache:
