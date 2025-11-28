@@ -6,6 +6,7 @@ services:
     working_dir: /app/backend
     volumes:
       - .:/app
+      - ~/.codex:/app/.codex
       - backend_node_modules:/app/backend/node_modules
     command: >
       sh -c "npm install --no-audit --no-fund --no-package-lock --no-update-notifier
