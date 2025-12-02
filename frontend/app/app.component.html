@@ -177,19 +177,29 @@
                   }
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    class="icon-button"
-                    [disabled]="activeProfileId === entry.id"
-                    (click)="activateProfile(entry)"
-                  >
-                    <span class="material-symbols-outlined">
-                      {{ activeProfileId === entry.id ? 'check_circle' : 'person' }}
-                    </span>
-                    <span class="icon-button__label">
-                      {{ activeProfileId === entry.id ? 'Active' : 'Activate' }}
-                    </span>
-                  </button>
+                  <div class="actions">
+                    <button
+                      type="button"
+                      class="icon-button icon-button--primary"
+                      (click)="refresh(entry)"
+                    >
+                      <span class="material-symbols-outlined">refresh</span>
+                      <span class="icon-button__label">Refresh</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="icon-button"
+                      [disabled]="activeProfileId === entry.id"
+                      (click)="activateProfile(entry)"
+                    >
+                      <span class="material-symbols-outlined">
+                        {{ activeProfileId === entry.id ? 'check_circle' : 'person' }}
+                      </span>
+                      <span class="icon-button__label">
+                        {{ activeProfileId === entry.id ? 'Active' : 'Activate' }}
+                      </span>
+                    </button>
+                  </div>
                 </td>
               </tr>
               <tr

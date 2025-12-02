@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common'
+import { Injectable, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import {
@@ -36,6 +36,21 @@ function authDir(): string {
 
 function authFilePath(id: string): string {
   return path.join(authDir(), `${id}.auth.json`)
+}
+
+function updatedDir(): string {
+  return path.join(authDir(), 'updated')
+}
+
+function timestamp(): string {
+  const now = new Date()
+  const yyyy = now.getFullYear().toString()
+  const mm = (now.getMonth() + 1).toString().padStart(2, '0')
+  const dd = now.getDate().toString().padStart(2, '0')
+  const hh = now.getHours().toString().padStart(2, '0')
+  const mi = now.getMinutes().toString().padStart(2, '0')
+  const ss = now.getSeconds().toString().padStart(2, '0')
+  return `${yyyy}${mm}${dd}-${hh}${mi}${ss}`
 }
 
 const CHATGPT_BASE_URL =
@@ -96,6 +111,60 @@ function serializeError(value: unknown): unknown {
     return value
   }
   return { value }
+}
+
+async function fileExists(file: string): Promise<boolean> {
+  try {
+    await fs.access(file)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function readAuthFile(file: string): Promise<AuthDotJson | null> {
+  try {
+    const raw = await fs.readFile(file, 'utf8')
+    return JSON.parse(raw) as AuthDotJson
+  } catch {
+    return null
+  }
+}
+
+async function accountIdFromFile(file: string): Promise<string | null> {
+  const auth = await readAuthFile(file)
+  const accountId = auth?.tokens?.account_id
+  if (typeof accountId === 'string' && accountId.length > 0) {
+    return accountId
+  }
+  return null
+}
+
+async function filesEqual(a: string, b: string): Promise<boolean> {
+  try {
+    const [contentA, contentB] = await Promise.all([
+      fs.readFile(a),
+      fs.readFile(b)
+    ])
+    return contentA.equals(contentB)
+  } catch {
+    return false
+  }
+}
+
+async function snapshotAuth(
+  file: string,
+  label: string,
+  stamp: string,
+  destBase?: string
+): Promise<string> {
+  const targetDir = updatedDir()
+  await fs.mkdir(targetDir, { recursive: true })
+  const base = destBase ?? path.basename(file)
+  const parts = label.length > 0 ? [stamp, label, base] : [stamp, base]
+  const dest = path.join(targetDir, parts.join('.'))
+  await fs.copyFile(file, dest)
+  return dest
 }
 
 interface IdTokenPayload {
@@ -412,6 +481,71 @@ function refreshTokenEndpoint(): string {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name)
+
+  private async archiveAndUpdateActiveAuth(): Promise<void> {
+    const dir = authDir()
+    const activePath = path.join(dir, 'auth.json')
+
+    if (!(await fileExists(activePath))) {
+      return
+    }
+
+    let entries: string[] = []
+    try {
+      entries = await fs.readdir(dir)
+    } catch {
+      entries = []
+    }
+
+    for (const entry of entries) {
+      if (!entry.endsWith('.auth.json')) {
+        continue
+      }
+      const candidate = path.join(dir, entry)
+      if (await filesEqual(activePath, candidate)) {
+        return
+      }
+    }
+
+    const activeAccountId = await accountIdFromFile(activePath)
+
+    if (!activeAccountId) {
+      const stamp = timestamp()
+      await snapshotAuth(activePath, '', stamp)
+      this.logger.log(`Archived new auth without account_id → ${path.join('updated', `${stamp}.auth.json`)}`)
+      return
+    }
+
+    let matchedProfile: string | null = null
+
+    for (const entry of entries) {
+      if (!entry.endsWith('.auth.json')) {
+        continue
+      }
+      const candidate = path.join(dir, entry)
+      const candidateAccount = await accountIdFromFile(candidate)
+      if (candidateAccount && candidateAccount === activeAccountId) {
+        matchedProfile = candidate
+        break
+      }
+    }
+
+    const stamp = timestamp()
+
+    if (matchedProfile) {
+      const base = path.basename(matchedProfile)
+      await snapshotAuth(matchedProfile, 'old', stamp, base)
+      await snapshotAuth(activePath, 'new', stamp, base)
+      await fs.copyFile(activePath, matchedProfile)
+      this.logger.log(`Updated profile ${base} with new auth for account_id=${activeAccountId}`)
+      return
+    }
+
+    await snapshotAuth(activePath, '', stamp)
+    this.logger.log(`Archived new auth with account_id=${activeAccountId} → ${path.join('updated', `${stamp}.auth.json`)}`)
+  }
+
   private async loadAuthFile(id: string): Promise<{ auth: AuthDotJson; file: string }> {
     const file = authFilePath(id)
 
@@ -560,8 +694,16 @@ export class AuthService {
       last_refresh: new Date().toISOString()
     }
 
+    const stamp = timestamp()
+    const base = path.basename(file)
+    await snapshotAuth(file, 'old', stamp, base)
+
     await persistRefreshPayload(id, refreshedToken)
     await fs.writeFile(file, JSON.stringify(updatedAuth, null, 2), 'utf8')
+    await snapshotAuth(file, 'new', stamp, base)
+    this.logger.log(
+      `Refreshed tokens for ${id}: old=${safeStringify(existingTokens)} new=${safeStringify(updatedTokens)}`
+    )
 
     return summarizeAuth(id, updatedAuth)
   }
@@ -644,31 +786,29 @@ export class AuthService {
     const currentAuthPath = path.join(dir, 'auth.json')
     const currentTmpPath = path.join(dir, 'current.tmp')
 
+    await this.archiveAndUpdateActiveAuth()
+
     if (id === 'azure') {
-      try {
-        await fs.unlink(currentAuthPath)
-      } catch {
-        // ignore if missing
+      if (await fileExists(currentAuthPath)) {
+        try {
+          await fs.unlink(currentAuthPath)
+        } catch (err) {
+          throw new InternalServerErrorException(
+            `Failed to remove active auth while switching to azure: ${String(err)}`
+          )
+        }
       }
       await fs.writeFile(currentTmpPath, id, 'utf8')
       return { id }
     }
 
     const sourcePath = authFilePath(id)
-    try {
-      await fs.access(sourcePath)
-    } catch {
+    if (!(await fileExists(sourcePath))) {
       throw new NotFoundException(`Auth file not found for id '${id}'`)
     }
 
     try {
-      await fs.unlink(currentAuthPath)
-    } catch {
-      // ignore if missing
-    }
-
-    try {
-      await fs.link(sourcePath, currentAuthPath)
+      await fs.copyFile(sourcePath, currentAuthPath)
     } catch (err) {
       throw new InternalServerErrorException(
         `Failed to activate profile '${id}': ${String(err)}`
