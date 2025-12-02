@@ -1,4 +1,4 @@
-import type { AuthSummary, RateLimitSnapshot, RateLimitWindow } from './types'
+import type { AuthSummary, RateLimitSnapshot, RateLimitWindow } from './types.js'
 
 function weeklyWindowForSnapshot(snapshot: RateLimitSnapshot | null | undefined): RateLimitWindow | null {
   if (!snapshot) {

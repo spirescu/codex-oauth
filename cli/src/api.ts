@@ -1,4 +1,4 @@
-import type { ActiveProfile, AuthSummary, RateLimitSnapshot } from './types'
+import type { ActiveProfile, AuthSummary, RateLimitSnapshot } from './types.js'
 
 const DEFAULT_BASE_URL = 'http://localhost/api'
 

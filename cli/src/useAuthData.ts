@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ActiveProfile, AuthSummary, RateLimitSnapshot } from './types'
-import { AuthClient } from './api'
-import { hasValidWeekly } from './usage-metrics'
+import type { ActiveProfile, AuthSummary, RateLimitSnapshot } from './types.js'
+import { AuthClient } from './api.js'
+import { hasValidWeekly } from './usage-metrics.js'
 
 interface UseAuthDataState {
   authEntries: AuthSummary[]

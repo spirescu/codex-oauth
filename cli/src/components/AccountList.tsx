@@ -1,8 +1,8 @@
 import React from 'react'
 import { Box, Text, useStdout } from 'ink'
-import type { AuthSummary, RateLimitSnapshot, RateLimitWindow } from '../types'
-import { ProgressBar } from './ProgressBar'
-import { hasValidWeekly, timeProgressPercent } from '../usage-metrics'
+import type { AuthSummary, RateLimitSnapshot, RateLimitWindow } from '../types.js'
+import { ProgressBar } from './ProgressBar.js'
+import { hasValidWeekly, timeProgressPercent } from '../usage-metrics.js'
 
 interface AccountListProps {
   authEntries: AuthSummary[]

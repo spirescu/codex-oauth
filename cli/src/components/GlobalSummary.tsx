@@ -1,14 +1,14 @@
 import React from 'react'
 import { Box, Text, useStdout } from 'ink'
-import type { AuthSummary, RateLimitSnapshot } from '../types'
-import { ProgressBar } from './ProgressBar'
+import type { AuthSummary, RateLimitSnapshot } from '../types.js'
+import { ProgressBar } from './ProgressBar.js'
 import {
   globalUsageAverage,
   globalUsageSum,
   globalWeeklyAccountCount,
   globalWeeklyElapsedTimeAverage,
   globalWeeklyElapsedTimeSum
-} from '../global-summary'
+} from '../global-summary.js'
 
 interface GlobalSummaryProps {
   authEntries: AuthSummary[]

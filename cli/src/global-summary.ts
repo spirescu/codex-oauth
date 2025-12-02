@@ -1,10 +1,10 @@
-import type { AuthSummary, RateLimitSnapshot } from './types'
+import type { AuthSummary, RateLimitSnapshot } from './types.js'
 import {
   globalUsageAverage as computeUsageAverage,
   globalUsageSum as computeUsageSum,
   globalWeeklyElapsedTimeAverage as computeElapsedAverage,
   globalWeeklyElapsedTimeSum as computeElapsedSum
-} from './usage-metrics'
+} from './usage-metrics.js'
 
 export function globalWeeklyAccountCount(authEntries: AuthSummary[], limits: Record<string, RateLimitSnapshot | null>): number {
   let count = 0

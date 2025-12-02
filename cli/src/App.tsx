@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Box, Text, useApp, useInput, useStdout } from 'ink'
-import { useAuthData } from './useAuthData'
-import { GlobalSummary } from './components/GlobalSummary'
-import { AccountList } from './components/AccountList'
-import { AccountDetails } from './components/AccountDetails'
-import { HotkeysBar } from './components/HotkeysBar'
+import { useAuthData } from './useAuthData.js'
+import { GlobalSummary } from './components/GlobalSummary.js'
+import { AccountList } from './components/AccountList.js'
+import { AccountDetails } from './components/AccountDetails.js'
+import { HotkeysBar } from './components/HotkeysBar.js'
 
 export function App(): JSX.Element {
   const interactive = Boolean(process.stdin?.isTTY)

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Box, Text } from 'ink'
-import type { AuthSummary } from '../types'
+import type { AuthSummary } from '../types.js'
 
 interface AccountDetailsProps {
   entry: AuthSummary
