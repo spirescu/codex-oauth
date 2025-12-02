@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Param, Post, Body } from '@nestjs/common'
+import { Controller, Get, Inject, Param, Post } from '@nestjs/common'
 import { AuthService, AuthSummary } from './auth.service'
 import { RateLimitSnapshot } from './types'
 

@@ -181,6 +181,7 @@
                     <button
                       type="button"
                       class="icon-button icon-button--primary"
+                      [disabled]="!hasValidWeekly(entry.id)"
                       (click)="refresh(entry)"
                     >
                       <span class="material-symbols-outlined">refresh</span>
@@ -375,6 +376,25 @@
                             }}
                           </dd>
                         </dl>
+                        </div>
+                      }
+                      @if (entry.openaiApiKey) {
+                        <div class="details-column">
+                          <h3>API key</h3>
+                          <dl>
+                            <dt>Key</dt>
+                            <dd class="api-key">
+                              {{ entry.openaiApiKey }}
+                              <button
+                                type="button"
+                                class="icon-button icon-button--key"
+                                title="Copy API key"
+                                (click)="copyApiKey(entry)"
+                              >
+                                <span class="material-symbols-outlined">content_copy</span>
+                              </button>
+                            </dd>
+                          </dl>
                         </div>
                       }
                     </div>

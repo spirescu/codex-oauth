@@ -84,6 +84,9 @@ export class AppComponent implements OnInit {
   }
 
   refresh(entry: AuthSummary): void {
+    if (!this.hasValidWeekly(entry.id)) {
+      return
+    }
     const confirmed = window.confirm(
       `Refresh tokens for ${entry.id}? This will contact auth.openai.com to rotate the stored tokens.`
     )
