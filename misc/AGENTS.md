@@ -7,20 +7,29 @@
   - if it's a package, research it with `pnpm info <package name> version`
   - otherwise research the version numbers online with your web_tool
 - Always pin explicit versions
+- add and maintain a .gitignore file
+  - add .idea and the .iml file for the project
 
 ## Languages, style, linting
 - All new code in TypeScript
-- Include `.editorconfig` (2-space indent, LF, trim trailing whitespace)
+- Include `.editorconfig`
+  - 2-space indent
+  - LF
+  - trim trailing whitespace
 - Use **ESLint** with flat config
   - No semicolons
   - Always use Single quotes
+  - `object-curly-spacing: ['error', 'never']` to enforce compact named imports/exports and alias usage
+  - `import/no-relative-parent-imports: 'error'` to require alias-based imports
+  - `import/extensions: ['error', 'ignorePackages', { ts: 'never', js: 'never', mjs: 'never', jsx: 'never', tsx: 'never' }]` to forbid explicit extensions in imports
+  - `unicorn/filename-case: ['error', { case: 'kebabCase' }]` to enforce kebab-case filenames
   - Disallow unnecessary type assertions
   - Disallow floating promises
   - Remove unused imports
 
 ## pnpm, node
-- Use **pnpm** for all package management, never npm
-- Pin Node via `.nvmrc` to `24.11.1`
+- Always use **pnpm**, never npm
+- `.nvmrc` -> `24.11.1`
 - use `.npmrc`
   - package-lock=false
   - fund=false
@@ -34,7 +43,6 @@
   - `start:prod`
   - `build:prod`
   - `install:deps`
-- Add checks to scripts
   - `fix:lint` (do not add plain `lint`)
   - `check:type` (`tsc --noEmit`)
   - `check:build`
@@ -48,32 +56,33 @@
 - Dev: `tsx watch src/main.ts`
 - Prod: use **esbuild**
 - `tsconfig.json`:
-  - `"module": "nodenext"`
-  - `"moduleResolution": "nodenext"`
+  - `"module": "ESNext"`
+  - `"moduleResolution": "bundler"`
   - `"experimentalDecorators": true`
   - `"emitDecoratorMetadata": true`
   - `"strict": true`
+  - set `baseUrl` and `paths`
 
 ### Angular
-- Use Material Symbols
 - Always use
   - standalone components
   - OnPush change detection
   - SASS (indentation syntax)
+  - Material Symbols
   - `@if` / `@for`, never use `*ngIf` / `*ngFor`
 
 ### NestJS
-- Dev: `tsx watch src/main.ts` (never `ts-node`)
-- Prod: esbuild (never Nest/Webpack builder)
-- Always enable Swagger
-- Always add global HTTP request logging middleware (method, path, status, duration)
+- Dev `tsx watch src/main.ts`
+- Prod `esbuild`
+- enable Swagger
+- add global HTTP request logging middleware (method, path, status, duration)
 
 ## Shared libraries
 - Place all cross-project logic inside a dedicated `libs/` workspace folder
 - Each shared lib must:
   - Be written in TypeScript only
   - Provide a clear public API via `index.ts`
-  - Use path aliasing (`@lib/...`) and never deep relative imports
+  - avoid deep relative imports
 - All logic must be pure or framework-agnostic
 
 ## Nx workspace

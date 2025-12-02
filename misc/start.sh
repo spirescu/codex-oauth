@@ -1,5 +1,11 @@
 #!/bin/bash
 
+set -o nounset
+set -o pipefail
+
+# -----------------------------------------------------------
+# Codex launcher wrapper
+# -----------------------------------------------------------
 danger-codex() {
   docker run --rm -it \
     -v "$(pwd)":/codex-sandbox \
@@ -8,31 +14,36 @@ danger-codex() {
     codex-image "$@"
 }
 
-set -o nounset
-set -o pipefail
-
+# -----------------------------------------------------------
+# Paths
+# -----------------------------------------------------------
 CODEX_DIR="$HOME/.codex"
-CURRENT_AUTH="$CODEX_DIR/auth.json"
-CURRENT_TMP="$CODEX_DIR/current.tmp"
+AUTH_ACTIVE="$CODEX_DIR/auth.json"
+CURRENT_PROFILE_FILE="$CODEX_DIR/current.tmp"
 
-# --- parameter mapping ---
+mkdir -p "$CODEX_DIR"
+
+# -----------------------------------------------------------
+# Parameter mapping
+# -----------------------------------------------------------
 case "${1-}" in
-  a) PARAM="azure" ;;
-  j) PARAM="jonas" ;;
-  n) PARAM="nagarro" ;;
-  s) PARAM="sarah" ;;
-  l) PARAM="lukas" ;;
-  h) PARAM="himanshu" ;;
-  t) PARAM="thomas" ;;
-  u) PARAM="update" ;;
-  "" ) PARAM="" ;;
-  * ) PARAM="$1" ;;
+  a) PROFILE="azure" ;;
+  j) PROFILE="jonas" ;;
+  n) PROFILE="nagarro" ;;
+  s) PROFILE="sarah" ;;
+  l) PROFILE="lukas" ;;
+  h) PROFILE="himanshu" ;;
+  t) PROFILE="thomas" ;;
+  u) PROFILE="update" ;;
+  "" ) PROFILE="" ;;
+  * ) PROFILE="$1" ;;
 esac
 
-# --- update Codex Docker image (Dockerfile embedded) ---
-if [ "${PARAM}" = "update" ]; then
+# -----------------------------------------------------------
+# Update Codex Docker image
+# -----------------------------------------------------------
+if [ "$PROFILE" = "update" ]; then
   echo "Rebuilding codex-image (inline Dockerfile)..."
-
   docker build -t codex-image - <<'EOF'
 FROM docker
 WORKDIR /codex-sandbox
@@ -42,7 +53,7 @@ ENTRYPOINT ["codex"]
 EOF
 
   if [ $? -ne 0 ]; then
-    echo "Error: Docker build failed."
+    echo "Docker build failed."
     exit 1
   fi
 
@@ -50,44 +61,64 @@ EOF
   exit 0
 fi
 
-# --- handle auth switching ---
-if [ -n "${PARAM}" ]; then
-  if [ "$PARAM" = "azure" ]; then
+# -----------------------------------------------------------
+# Resolve profile file
+# -----------------------------------------------------------
+PROFILE_FILE="$CODEX_DIR/$PROFILE.auth.json"
+
+# -----------------------------------------------------------
+# Switch profile (copy-in)
+# -----------------------------------------------------------
+if [ -n "$PROFILE" ]; then
+
+  if [ "$PROFILE" = "azure" ]; then
     echo "Switching to Azure mode..."
-    rm -f "$CURRENT_AUTH"
-    echo "$PARAM" > "$CURRENT_TMP"
-    echo "Auth removed. Launching Codex with -p azure..."
-    echo "Launching Codex in $(pwd)..."
+    rm -f "$AUTH_ACTIVE"
+    echo "$PROFILE" > "$CURRENT_PROFILE_FILE"
+    echo "Launching Codex with Azure profile..."
     danger-codex -p azure
+
+    # No copy-back for azure
     exit 0
   fi
 
-  AUTH_FILE="$CODEX_DIR/$PARAM.auth.json"
-
-  if [ ! -f "$AUTH_FILE" ]; then
-    echo "Auth for '$PARAM' not found: $AUTH_FILE"
+  if [ ! -f "$PROFILE_FILE" ]; then
+    echo "Profile '$PROFILE' does not exist: $PROFILE_FILE"
     exit 1
   fi
 
-  echo "Switching Codex auth to '$PARAM'..."
+  echo "Activating profile '$PROFILE'..."
 
-  mkdir -p "$CODEX_DIR"
-  rm -f "$CURRENT_AUTH"
+  # Copy profile into active auth.json
+  cp "$PROFILE_FILE" "$AUTH_ACTIVE"
 
-  if ! ln "$AUTH_FILE" "$CURRENT_AUTH"; then
-    echo "Error: failed to create hard link. Are files on the same filesystem?"
-    exit 1
-  fi
-
-  echo "$PARAM" > "$CURRENT_TMP"
+  echo "$PROFILE" > "$CURRENT_PROFILE_FILE"
 else
-  echo "No parameter provided — keeping current auth."
-  if [ -f "$CURRENT_TMP" ]; then
-    echo "Currently using auth for '$(cat "$CURRENT_TMP")'."
+  # No parameter: keep current profile
+  if [ -f "$CURRENT_PROFILE_FILE" ]; then
+    echo "Using existing profile '$(cat "$CURRENT_PROFILE_FILE")'."
   else
-    echo "No record found — unknown current auth."
+    echo "No profile active and none provided."
   fi
 fi
 
-echo "Launching Codex in $(pwd)..."
+# -----------------------------------------------------------
+# Launch Codex
+# -----------------------------------------------------------
+ACTIVE_PROFILE="$(cat "$CURRENT_PROFILE_FILE" 2>/dev/null || true)"
+echo "Launching Codex (profile: $ACTIVE_PROFILE)..."
 danger-codex
+
+# -----------------------------------------------------------
+# Copy-out: persist Codex updates into the active profile
+# -----------------------------------------------------------
+if [ -n "$ACTIVE_PROFILE" ] && [ "$ACTIVE_PROFILE" != "azure" ]; then
+  PROFILE_FILE="$CODEX_DIR/$ACTIVE_PROFILE.auth.json"
+
+  if [ -f "$AUTH_ACTIVE" ]; then
+    echo "Persisting updated auth.json back to profile '$ACTIVE_PROFILE'."
+    cp "$AUTH_ACTIVE" "$PROFILE_FILE"
+  fi
+fi
+
+echo "Done."
