@@ -148,7 +148,7 @@ esac
 # -----------------------------------------------------------
 if [ "$PROFILE" = "update" ]; then
   echo "Rebuilding codex-image (inline Dockerfile)..."
-  docker build -t codex-image - <<'EOF'
+  docker build --no-cache --pull -t codex-image - <<'EOF'
 FROM docker
 WORKDIR /codex-sandbox
 RUN apk add --no-cache curl jq python3 ripgrep npm
