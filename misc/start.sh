@@ -151,8 +151,12 @@ if [ "$PROFILE" = "update" ]; then
   docker build --no-cache --pull -t codex-image - <<'EOF'
 FROM docker
 WORKDIR /codex-sandbox
-RUN apk add --no-cache curl jq python3 ripgrep npm
+RUN apk add --no-cache curl jq python3 ripgrep npm chromium
 RUN npm i -g @openai/codex pnpm
+# Provide Chrome binary where the MCP expects it (headless Chromium wrapper)
+RUN mkdir -p /opt/google/chrome && \
+    printf '#!/bin/sh\nexec /usr/lib/chromium/chromium --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu "$@"\n' > /opt/google/chrome/chrome && \
+    chmod +x /opt/google/chrome/chrome
 ENTRYPOINT ["codex"]
 EOF
 
